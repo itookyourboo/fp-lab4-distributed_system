@@ -1,0 +1,31 @@
+defmodule Tasker.MixProject do
+  use Mix.Project
+
+  def project do
+    [
+      app: :tasker,
+      version: "0.1.0",
+      elixir: "~> 1.15",
+      start_permanent: Mix.env() == :prod,
+      deps: deps(),
+      preferred_cli_env: [release: :prod]
+    ]
+  end
+
+  # Run "mix help compile.app" to learn about applications.
+  def application do
+    [
+      extra_applications: [:logger, :runtime_tools],
+      mod: {Tasker.Application, []}
+    ]
+  end
+
+  # Run "mix help deps" to learn about dependencies.
+  defp deps do
+    [
+      {:poolboy, "~> 1.5"},
+      {:plug_cowboy, "~> 2.0"},
+      {:distillery, "~> 2.0"}
+    ]
+  end
+end
