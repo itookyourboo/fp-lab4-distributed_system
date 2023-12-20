@@ -1,9 +1,12 @@
 defmodule Tasker.Database do
   alias Tasker.Database.Worker
 
+  @db_folder "./data"
+  @timeout :timer.seconds(5)
+
   def child_spec(_) do
     [node_name, _] = "#{node()}" |> String.split("@")
-    folder = "data/#{node_name}"
+    folder = "#{@db_folder}/#{node_name}"
     File.mkdir_p!(folder)
 
     :poolboy.child_spec(
@@ -22,7 +25,8 @@ defmodule Tasker.Database do
       :rpc.multicall(
         __MODULE__,
         :store_local,
-        [key, data]
+        [key, data],
+        @timeout
       )
 
     Enum.each(bad_nodes, fn node ->

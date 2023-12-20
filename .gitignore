@@ -26,3 +26,5 @@ tasker-*.tar
 /tmp/
 
 /.elixir_ls/
+
+/data/

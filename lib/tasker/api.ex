@@ -7,7 +7,7 @@ defmodule Tasker.API do
   def child_spec(_) do
     Plug.Cowboy.child_spec(
       scheme: :http,
-      options: [port: 8181],
+      options: [port: Application.fetch_env!(:tasker, :port)],
       plug: __MODULE__
     )
   end

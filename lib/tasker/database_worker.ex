@@ -15,6 +15,7 @@ defmodule Tasker.Database.Worker do
 
   @impl GenServer
   def init(folder) do
+    IO.puts("Starting database worker")
     {:ok, folder}
   end
 
