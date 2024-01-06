@@ -28,3 +28,5 @@ tasker-*.tar
 /.elixir_ls/
 
 /data/
+
+**/__pycache__

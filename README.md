@@ -31,7 +31,7 @@
 Запуск первого узла на порту 8181:
 
 ```shell
-$ TAKSER_PORT=8181 iex --sname node1@localhost -S mix
+$ TASKER_PORT=8181 iex --sname node1@localhost -S mix
 ```
 
 Запуск второго узла на порту 8282:
@@ -136,6 +136,73 @@ $ curl -X GET -G \
 ### [V] Согласованность
 
 Достигается благодаря репликации данных. Каждый узел записывает изменения не только у себя, но и у других узлов.
+
+#### Доказательство
+
+Достаточно тяжело обосновать данное свойство теоретически, поэтому в подтверждение были написаны Property based тесты:
+
+1. **Репликация**. Проверяет, что N записей, сделанных в узел 0, будут доступны во всех других узлах. Также показывает, что большое количество параллельных запросов к единому ресурсу не приводит к блокировкам или потере данных.
+    
+    ```python
+    def __test_replication(self, name: str, count: int) -> None:
+        with ThreadPool() as pool:
+            pool.map(lambda i: send_entry(0, name, f'note{i}'), range(count))
+
+        for i in range(self.NODES_COUNT):
+            entries = get_entries(i, name)
+            entries_count = len(entries.splitlines())
+            self.assertEqual(entries_count, count, f'Node {i} has {entries_count} tasks instead of {count}')
+    ```
+
+2. **Синхронизация**. Проверяет, что при параллельных записях в разные узлы не возникает взаимных блокировок, а сохраненные данные будут равны с точностью до их порядка.
+
+    ```python
+    def __test_synchronizing(self, name: str, count: int) -> None:
+        with ThreadPool() as pool:
+            pool.map(lambda i: send_entry(i % self.NODES_COUNT, name, f'note{i}'), range(count))
+
+        results = []
+        for i in range(self.NODES_COUNT):
+            entries = get_entries(i, name)
+            entries_count = len(entries.splitlines())
+            self.assertEqual(entries_count, count, f'Node {i} has {entries_count} instead of {count}')
+            results.append(entries)
+        
+        with self.subTest('Test all results are equal (including order)'):
+            self.assertEqual(len(set(results)), 1)
+    ```
+
+Перед запуском тестов нужно поднять и соединить N узлов. Elixir не предоставляет возможностей для автоматического разворачивания кластера, поэтому приходится это делать руками.
+
+```shell
+$ TASKER_PORT=8000 iex --sname node0@localhost -S mix
+$ TASKER_PORT=8001 iex --sname node1@localhost -S mix
+$ TASKER_PORT=8002 iex --sname node2@localhost -S mix
+$ TASKER_PORT=8003 iex --sname node3@localhost -S mix
+```
+
+```shell
+iex(node0@localhost)1> Node.connect(:node1@localhost)
+true
+iex(node0@localhost)2> Node.connect(:node2@localhost)
+true
+iex(node0@localhost)3> Node.connect(:node3@localhost)
+```
+
+Запуск тестов:
+
+```shell
+$ python test/test_consistency.py
+test_replication (__main__.TestConsistensy) ... ok
+test_synchronizing (__main__.TestConsistensy) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 79.357s
+
+OK
+```
+
+[Исходный код тестов](test/test_consistency.py)
 
 ### [X] Доступность
 
