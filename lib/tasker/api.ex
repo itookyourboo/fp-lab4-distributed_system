@@ -30,7 +30,6 @@ defmodule Tasker.API do
   defp format_entries(entries) do
     entries
     |> Enum.map(fn entry ->
-      IO.inspect(entry)
       "#{entry.id}. #{entry.title}"
     end)
     |> Enum.join("\n")
@@ -41,13 +40,16 @@ defmodule Tasker.API do
     name = Map.fetch!(conn.params, "list")
     title = Map.fetch!(conn.params, "title")
 
-    name
-    |> Tasker.Mapper.server_process()
-    |> Tasker.Server.add_entry(%{title: title})
+    {status, message} =
+      name
+      |> Tasker.Mapper.server_process()
+      |> Tasker.Server.add_entry(%{title: title})
+
+    status_code = if status == :ok, do: 200, else: 500
 
     conn
     |> Plug.Conn.put_resp_content_type("text/plain")
-    |> Plug.Conn.send_resp(200, "OK")
+    |> Plug.Conn.send_resp(status_code, message)
   end
 
   match _ do

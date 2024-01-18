@@ -40,8 +40,8 @@ defmodule Tasker.Server do
   @impl GenServer
   def handle_call({:add_entry, new_entry}, _, {name, list}) do
     new_list = Tasker.List.add_entry(list, new_entry)
-    Tasker.Database.store(name, new_list)
-    {:reply, :ok, {name, new_list}, @idle_timeout}
+    {status, message} = Tasker.Database.store(name, new_list)
+    {:reply, {status, message}, {name, new_list}, @idle_timeout}
   end
 
   def handle_call({:entries}, _, {name, list}) do

@@ -21,7 +21,7 @@ defmodule Tasker.Database do
   end
 
   def store(key, data) do
-    {_, bad_nodes} =
+    {results, bad_nodes} =
       :rpc.multicall(
         __MODULE__,
         :store_local,
@@ -33,7 +33,11 @@ defmodule Tasker.Database do
       IO.puts("Failed to store on node #{node}")
     end)
 
-    :ok
+    if Enum.all?(results, fn {:badrpc, _} -> false; _ -> true end) do
+      {:ok, "OK"}
+    else
+      {:error, "Failed to store on some nodes"}
+    end
   end
 
   def store_local(key, data) do
