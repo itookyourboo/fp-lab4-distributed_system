@@ -33,7 +33,10 @@ defmodule Tasker.Database do
       IO.puts("Failed to store on node #{node}")
     end)
 
-    if Enum.all?(results, fn {:badrpc, _} -> false; _ -> true end) do
+    if Enum.all?(results, fn
+         {:badrpc, _} -> false
+         _ -> true
+       end) do
       {:ok, "OK"}
     else
       {:error, "Failed to store on some nodes"}
